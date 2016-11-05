@@ -23,17 +23,13 @@ var Player = function(index, scene)
     self.m_main.ellipsoid = new BABYLON.Vector3(0.5, 2.0, 0.5);
     self.m_main.ellipsoidOffset = new BABYLON.Vector3(0, 1.0, 0);
 
-    // static CreateCylinder(
-    // name, height, diameterTop, diameterBottom,
-    // tessellation, subdivisions, scene, updatable, sideOrientation);
-    self.m_cylinder = BABYLON.Mesh.CreateCylinder(
-        'player_main_' + String(index), 2, 0.5, 1, 25, 2, scene);
+    // static CreateCylinder(name, height, diameterTop, diameterBottom, tessellation, subdivisions, scene, updatable, sideOrientation);
+    self.m_cylinder = BABYLON.Mesh.CreateCylinder('player_main_' + String(index), 2, 0.5, 1, 25, 2, scene);
     self.m_cylinder.position.y = 1;
     self.m_cylinder.parent = self.m_main;
     // self.m_cylinder.checkCollisions = true;
 
-    self.m_box = BABYLON.Mesh.CreateBox(
-        "player_box_" + String(index), 0.5, scene);
+    self.m_box = BABYLON.Mesh.CreateBox("player_box_" + String(index), 0.5, scene);
     self.m_box.position.y = 1.5;
     self.m_box.position.z = 0.5;
     self.m_box.scaling.x = 2.0;
@@ -114,26 +110,25 @@ var Scene = function()
             Math.cos(self.m_player.m_main.rotation.y));
 
         var forward = direction.scale(self.m_speed);
+        var net = BABYLON.Vector3.Zero();
 
         if (self.m_keys.up == 1)
         {
-            self.m_player.m_main.moveWithCollisions(forward);
+            net.addInPlace(forward);
         }
         if (self.m_keys.down == 1)
         {
-            var backwards = BABYLON.Vector3.TransformCoordinates(forward, self.m_rotation_matrices.backwards);
-            self.m_player.m_main.moveWithCollisions(backwards);
+            net.addInPlace(BABYLON.Vector3.TransformCoordinates(forward, self.m_rotation_matrices.backwards));
         }
         if (self.m_keys.left == 1)
         {
-            var left = BABYLON.Vector3.TransformCoordinates(forward, self.m_rotation_matrices.left);
-            self.m_player.m_main.moveWithCollisions(left);
+            net.addInPlace(BABYLON.Vector3.TransformCoordinates(forward, self.m_rotation_matrices.left));
         }
         if (self.m_keys.right == 1)
         {
-            var right = BABYLON.Vector3.TransformCoordinates(forward, self.m_rotation_matrices.right);
-            self.m_player.m_main.moveWithCollisions(right);
+            net.addInPlace(BABYLON.Vector3.TransformCoordinates(forward, self.m_rotation_matrices.right));
         }
+        self.m_player.m_main.moveWithCollisions(net);
         self.cameraFollowPlayer();
     };
 
