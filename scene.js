@@ -16,16 +16,19 @@ var Player = function(index, scene)
 {
     var self = this;
 
+    self.m_camera_y_offset = 1.5;
+
     self.m_main = new BABYLON.Mesh("player_" + index, scene);
 
-    self.m_cylinder = BABYLON.Mesh.CreateCylinder('player_main_' + String(index), 2, 1, 1, 25, 2, scene);
+    // static CreateCylinder(name, height, diameterTop, diameterBottom, tessellation, subdivisions, scene, updatable, sideOrientation);
+    self.m_cylinder = BABYLON.Mesh.CreateCylinder('player_main_' + String(index), 2, 0.5, 1, 25, 2, scene);
     self.m_cylinder.position.y = 1;
     self.m_cylinder.parent = self.m_main;
 
     self.m_box = BABYLON.Mesh.CreateBox("player_box_" + String(index), 0.5, scene);
     self.m_box.position.y = 1.5;
     self.m_box.position.z = 0.5;
-    self.m_box.scaling.x = 2.5;
+    self.m_box.scaling.x = 2.0;
     self.m_box.parent = self.m_main;
 };
 
@@ -95,18 +98,18 @@ var Scene = function()
         {
             //self.m_player.m_main.position.z += 0.1;
 
-            var forward = new BABYLON.Vector3(parseFloat(Math.sin(parseFloat(self.m_player.m_main.rotation.y))) / self.m_speed,
+            var forward = new BABYLON.Vector3(Math.sin(self.m_player.m_main.rotation.y) / self.m_speed,
                 0,   // -0.5,  used as gravity (?)
-                parseFloat(Math.cos(parseFloat(self.m_player.m_main.rotation.y))) / self.m_speed);
+                Math.cos(self.m_player.m_main.rotation.y) / self.m_speed);
             self.m_player.m_main.moveWithCollisions(forward);
         }
         if (self.m_keys.down == 1)
         {
             // self.m_player.m_main.position.z -= 0.1
 
-            var backwards = new BABYLON.Vector3(parseFloat(Math.sin(parseFloat(self.m_player.m_main.rotation.y))) / self.m_speed,
+            var backwards = new BABYLON.Vector3(Math.sin(self.m_player.m_main.rotation.y) / self.m_speed,
                 0,   // -0.5,  used as gravity (?)
-                parseFloat(Math.cos(parseFloat(self.m_player.m_main.rotation.y))) / self.m_speed);
+                Math.cos(self.m_player.m_main.rotation.y) / self.m_speed);
             backwards = backwards.negate();
             self.m_player.m_main.moveWithCollisions(backwards);
         }
@@ -118,14 +121,15 @@ var Scene = function()
         {
             self.m_player.m_main.position.x += 0.1
         }
+        self.CameraFollowPlayer();
     };
 
     //--------------------------------------------------------------------------
     self.CameraFollowPlayer = function()
     {
-        //self.m_player.m_main.rotation.y = -4.69 - self.m_camera.alpha;
-        self.m_camera.target.x = parseFloat(self.m_player.m_main.position.x);
-        self.m_camera.target.z = parseFloat(self.m_player.m_main.position.z);
+        self.m_player.m_main.rotation.y = -self.m_camera.alpha - Math.PI / 2;
+        self.m_camera.target = self.m_player.m_main.position.clone();
+        self.m_camera.target.y += self.m_player.m_camera_y_offset;
     };
 
     //##########################################################################
@@ -139,14 +143,21 @@ var Scene = function()
 
     // create a basic BJS Scene object
     self.m_scene = new BABYLON.Scene(self.m_engine);
+    self.m_room_mesh = new BABYLON.Mesh("room", self.m_scene);
+
+    // load room
+    BABYLON.SceneLoader.ImportMesh("", "assets/levels/double_pathway/", "double_pathway.babylon", self.m_scene, function (newMeshes) {
+        newMeshes.parent = self.m_room_mesh;
+    });
 
     self.m_player = new Player(0, self.m_scene);
+    self.m_player.m_main.position.y = -4;
     console.log(self.m_player);
 
     // create a FreeCamera, and set its position to (x:0, y:5, z:-10)
     // self.m_camera = new BABYLON.ArcRotateCamera("Camera", 3 * Math.PI / 2, Math.PI / 8, 50, BABYLON.Vector3.Zero(), self.m_scene);
 //    self.m_camera = new BABYLON.FreeCamera('camera1', new BABYLON.Vector3(0, 5,-10), self.m_scene);
-    self.m_camera = new BABYLON.ArcFollowCamera('camera1', -Math.PI / 2, Math.PI / 5, 12, self.m_player.m_main, self.m_scene);
+    self.m_camera = new BABYLON.ArcRotateCamera('camera1', -Math.PI / 2, Math.PI / 5, 6, new BABYLON.Vector3.Zero(), self.m_scene);
     self.m_scene.activeCamera = self.m_camera;
     self.m_camera.attachControl(self.m_canvas, false);
 
@@ -154,9 +165,8 @@ var Scene = function()
     self.m_light = new BABYLON.HemisphericLight('light1', new BABYLON.Vector3(0,1,0), self.m_scene);
 
     // create a built-in "ground" shape; its constructor takes the same 5 params as the sphere's one
-    self.m_ground = BABYLON.Mesh.CreateGround('ground1', 10, 10, 4, self.m_scene);
-
-    console.log(self.m_ground);
+    //self.m_ground = BABYLON.Mesh.CreateGround('ground1', 10, 10, 4, self.m_scene);
+    //console.log(self.m_ground);
 
     // var surfaces = CreateMap1();
     // for (var key in surfaces)
@@ -174,7 +184,7 @@ var Scene = function()
     // self.m_sphere.position = world_position;
 
     self.m_scene.registerBeforeRender(function(){
-        if(self.m_scene.isReady()) {
+        if(self.m_scene.isReady() && self.m_player) {
             self.animatePlayer();
         }
     });
@@ -182,10 +192,6 @@ var Scene = function()
     // run the render loop
     self.m_engine.runRenderLoop(function(){
         self.m_scene.render();
-        if (self.m_scene.isReady() && self.m_player)
-        {
-            self.CameraFollowPlayer();
-        }
     });
 
     // the canvas/window resize event handler
