@@ -4,7 +4,11 @@
 // Example Babylon JS:
 //    http://www.babylon.actifgames.com/moveCharacter/
 
-g_scene = null;
+// Debugging can be done by:  console.log(obj);
+
+// Forward is +z.  Up is +y.
+
+var g_scene;
 
 //------------------------------------------------------------------------------
 // The player
@@ -12,12 +16,16 @@ var Player = function(index, scene)
 {
     var self = this;
 
-    self.m_main = BABYLON.Mesh.CreateCylinder('player_main_' + String(index), 2, 1, 1, 25, 2, scene);
-    self.m_main.position.y = 1;
+    self.m_main = new BABYLON.Mesh("player_" + index, scene);
+
+    self.m_cylinder = BABYLON.Mesh.CreateCylinder('player_main_' + String(index), 2, 1, 1, 25, 2, scene);
+    self.m_cylinder.position.y = 1;
+    self.m_cylinder.parent = self.m_main;
 
     self.m_box = BABYLON.Mesh.CreateBox("player_box_" + String(index), 0.5, scene);
-    self.m_box.position.y = 0.5;
+    self.m_box.position.y = 1.5;
     self.m_box.position.z = 0.5;
+    self.m_box.scaling.x = 2.5;
     self.m_box.parent = self.m_main;
 };
 
@@ -132,20 +140,23 @@ var Scene = function()
     // create a basic BJS Scene object
     self.m_scene = new BABYLON.Scene(self.m_engine);
 
+    self.m_player = new Player(0, self.m_scene);
+    console.log(self.m_player);
+
     // create a FreeCamera, and set its position to (x:0, y:5, z:-10)
     // self.m_camera = new BABYLON.ArcRotateCamera("Camera", 3 * Math.PI / 2, Math.PI / 8, 50, BABYLON.Vector3.Zero(), self.m_scene);
 //    self.m_camera = new BABYLON.FreeCamera('camera1', new BABYLON.Vector3(0, 5,-10), self.m_scene);
-    self.m_camera = new BABYLON.ArcRotateCamera('camera1', -Math.PI / 2, Math.PI / 2.3, 12, new BABYLON.Vector3(0, 1.0, 0), self.m_scene);
+    self.m_camera = new BABYLON.ArcFollowCamera('camera1', -Math.PI / 2, Math.PI / 5, 12, self.m_player.m_main, self.m_scene);
     self.m_scene.activeCamera = self.m_camera;
     self.m_camera.attachControl(self.m_canvas, false);
 
     // create a basic light, aiming 0,1,0 - meaning, to the sky
     self.m_light = new BABYLON.HemisphericLight('light1', new BABYLON.Vector3(0,1,0), self.m_scene);
 
-    self.m_player = new Player(0, self.m_scene);
-
     // create a built-in "ground" shape; its constructor takes the same 5 params as the sphere's one
     self.m_ground = BABYLON.Mesh.CreateGround('ground1', 10, 10, 4, self.m_scene);
+
+    console.log(self.m_ground);
 
     // var surfaces = CreateMap1();
     // for (var key in surfaces)
