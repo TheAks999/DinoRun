@@ -1,6 +1,9 @@
 // For Babylon JS examples:
 //    http://www.babylonjs-playground.com/
 
+// Example Babylon JS:
+//    http://www.babylon.actifgames.com/moveCharacter/
+
 g_scene = null;
 
 //------------------------------------------------------------------------------
