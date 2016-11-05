@@ -19,7 +19,8 @@ var g_rotation_matrices = {
 var g_game_options = {
     debug_scene_mode: true,
     debug_show_player_ellipsoid: true,
-    normal_speed: 1/5.0
+    normal_speed: 1/5.0,
+    fast_speed: 1/5.0 * 2
 };
 
 //------------------------------------------------------------------------------
@@ -86,6 +87,11 @@ var Scene = function()
     {
         var key_code = event.keyCode;
         var ch = String.fromCharCode(key_code);
+
+        if (key_code == 16)
+        {
+            self.m_speed = g_game_options.fast_speed;
+        }
         if (ch == "A")
         {
             self.m_keys.left = 1;
@@ -110,6 +116,10 @@ var Scene = function()
         var key_code = event.keyCode;
         var ch = String.fromCharCode(key_code);
 
+        if (key_code == 16)
+        {
+            self.m_speed = g_game_options.normal_speed;
+        }
         if (ch == "A")
         {
             self.m_keys.left = 0;
