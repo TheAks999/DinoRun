@@ -20,17 +20,21 @@ var Player = function(index, scene)
 
     self.m_main = new BABYLON.Mesh("player_" + index, scene);
     self.m_main.checkCollisions = true;
+    self.m_main.ellipsoid = new BABYLON.Vector3(0.5, 2.0, 0.5);
+    self.m_main.ellipsoidOffset = new BABYLON.Vector3(0, 1.0, 0);
 
     // static CreateCylinder(name, height, diameterTop, diameterBottom, tessellation, subdivisions, scene, updatable, sideOrientation);
     self.m_cylinder = BABYLON.Mesh.CreateCylinder('player_main_' + String(index), 2, 0.5, 1, 25, 2, scene);
     self.m_cylinder.position.y = 1;
     self.m_cylinder.parent = self.m_main;
+    // self.m_cylinder.checkCollisions = true;
 
     self.m_box = BABYLON.Mesh.CreateBox("player_box_" + String(index), 0.5, scene);
     self.m_box.position.y = 1.5;
     self.m_box.position.z = 0.5;
     self.m_box.scaling.x = 2.0;
     self.m_box.parent = self.m_main;
+    // self.m_box.checkCollisions = true;
 };
 
 //------------------------------------------------------------------------------
@@ -148,7 +152,7 @@ var Scene = function()
 
     // create a basic BJS Scene object
     self.m_scene = new BABYLON.Scene(self.m_engine);
-    self.m_scene.checkCollisions = true;
+    self.m_scene.collisionsEnabled = true;
 
     self.m_room_mesh_a = new BABYLON.Mesh("room_a", self.m_scene);
 
