@@ -38,8 +38,14 @@ var Scene = function()
 {
     var self = this;
 
+    self.m_rotation_matrices = {
+        left: BABYLON.Matrix.RotationY(-Math.PI / 2),
+        right: BABYLON.Matrix.RotationY(Math.PI / 2),
+        backwards: BABYLON.Matrix.RotationY(-Math.PI)
+    };
+
     self.m_keys = {left: 0, right: 0, up: 0, down: 0};
-    self.m_speed = 5;
+    self.m_speed = 1/5.0;
 
     //##########################################################################
     // Event handlers
@@ -94,32 +100,30 @@ var Scene = function()
     //--------------------------------------------------------------------------
     self.animatePlayer = function()
     {
+        var direction = new BABYLON.Vector3(Math.sin(self.m_player.m_main.rotation.y),
+            0,   // -0.5,  used as gravity (?)
+            Math.cos(self.m_player.m_main.rotation.y));
+
+        var forward = direction.scale(self.m_speed);
+
         if (self.m_keys.up == 1)
         {
-            //self.m_player.m_main.position.z += 0.1;
-
-            var forward = new BABYLON.Vector3(Math.sin(self.m_player.m_main.rotation.y) / self.m_speed,
-                0,   // -0.5,  used as gravity (?)
-                Math.cos(self.m_player.m_main.rotation.y) / self.m_speed);
             self.m_player.m_main.moveWithCollisions(forward);
         }
         if (self.m_keys.down == 1)
         {
-            // self.m_player.m_main.position.z -= 0.1
-
-            var backwards = new BABYLON.Vector3(Math.sin(self.m_player.m_main.rotation.y) / self.m_speed,
-                0,   // -0.5,  used as gravity (?)
-                Math.cos(self.m_player.m_main.rotation.y) / self.m_speed);
-            backwards = backwards.negate();
+            var backwards = BABYLON.Vector3.TransformCoordinates(forward, self.m_rotation_matrices.backwards);
             self.m_player.m_main.moveWithCollisions(backwards);
         }
         if (self.m_keys.left == 1)
         {
-            self.m_player.m_main.position.x -= 0.1
+            var left = BABYLON.Vector3.TransformCoordinates(forward, self.m_rotation_matrices.left);
+            self.m_player.m_main.moveWithCollisions(left);
         }
         if (self.m_keys.right == 1)
         {
-            self.m_player.m_main.position.x += 0.1
+            var right = BABYLON.Vector3.TransformCoordinates(forward, self.m_rotation_matrices.right);
+            self.m_player.m_main.moveWithCollisions(right);
         }
         self.CameraFollowPlayer();
     };
