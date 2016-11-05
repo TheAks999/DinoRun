@@ -1,6 +1,28 @@
 // For Babylon JS examples:
 //    http://www.babylonjs-playground.com/
 
+keys={left: 0, right: 0, up: 0, down: 0};
+
+function animateActor()
+{
+    if (keys.up == 1)
+    {
+        sphere.position.z += 0.1
+    }
+    if (keys.down == 1)
+    {
+        sphere.position.z -= 0.1
+    }
+    if (keys.left == 1)
+    {
+        sphere.position.x -= 0.1
+    }
+    if (keys.right == 1)
+    {
+        sphere.position.x += 0.1
+    }
+}
+
 function createScene()
 {
     // get the canvas DOM element
@@ -28,7 +50,7 @@ function createScene()
         var light = new BABYLON.HemisphericLight('light1', new BABYLON.Vector3(0,1,0), scene);
 
         // create a built-in "sphere" shape; its constructor takes 5 params: name, width, depth, subdivisions, scene
-        var sphere = BABYLON.Mesh.CreateSphere('sphere1', 16, 2, scene);
+        sphere = BABYLON.Mesh.CreateSphere('sphere1', 16, 2, scene);
 
         // move the sphere upward 1/2 of its height
         sphere.position.y = 1;
@@ -55,17 +77,70 @@ function createScene()
     };
 
     // call the createScene function
-    var scene = createScene();
+    g_scene = createScene();
+
+    g_scene.registerBeforeRender(function(){
+        if(g_scene.isReady()) {
+            animateActor();
+        }
+    });
 
     // run the render loop
     engine.runRenderLoop(function(){
-        scene.render();
+        g_scene.render();
     });
 
     // the canvas/window resize event handler
-    window.addEventListener('resize', function(){
+    window.addEventListener('resize', function() {
         engine.resize();
     });
+    window.addEventListener("keydown", onKeyDown, false);
+    window.addEventListener("keyup", onKeyUp, false);
+}
+
+function onKeyDown(event)
+{
+    var key_code = event.keyCode;
+    var ch = String.fromCharCode(key_code);
+    if (ch == "A")
+    {
+        keys.left = 1;
+    }
+    else if (ch == "D")
+    {
+        keys.right = 1;
+    }
+    else if (ch == "S")
+    {
+        keys.down = 1;
+    }
+    else if (ch == "W")
+    {
+        keys.up = 1;
+    }
+}
+
+function onKeyUp(event)
+{
+    var key_code = event.keyCode;
+    var ch = String.fromCharCode(key_code);
+
+    if (ch == "A")
+    {
+        keys.left = 0;
+    }
+    else if (ch == "D")
+    {
+        keys.right = 0;
+    }
+    else if (ch == "S")
+    {
+        keys.down = 0;
+    }
+    else if (ch == "W")
+    {
+        keys.up = 0;
+    }
 }
 
 //window.addEventListener('DOMContentLoaded', createScene);
