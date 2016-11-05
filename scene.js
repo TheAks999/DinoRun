@@ -10,12 +10,18 @@
 
 var g_scene;
 
-g_rotation_matrices = {
+var g_rotation_matrices = {
     left: BABYLON.Matrix.RotationY(-Math.PI / 2),
     right: BABYLON.Matrix.RotationY(Math.PI / 2),
     backwards: BABYLON.Matrix.RotationY(-Math.PI)
 };
 
+var g_game_options = {
+    debug_scene_mode: true,
+    debug_show_player_ellipsoid: true,
+    normal_speed: 1/5.0,
+    fast_speed: 1/5.0 * 2
+};
 
 //------------------------------------------------------------------------------
 // The player
@@ -30,19 +36,22 @@ var Player = function(index, mesh, scene)
     self.m_main.ellipsoid = new BABYLON.Vector3(0.5, 0.5, 0.5);
     self.m_main.ellipsoidOffset = new BABYLON.Vector3(0, 1.0, 0);
 
-    self.m_ellipsoid = BABYLON.MeshBuilder.CreateSphere("player_box_" + String(index),
-        {
-            diameterX:self.m_main.ellipsoid.x*2,
-            diameterY:self.m_main.ellipsoid.y*2,
-            diameterZ:self.m_main.ellipsoid.z*2
-        }, scene);
-    self.m_ellipsoid.parent = self.m_main;
-    self.m_ellipsoid.position = self.m_main.ellipsoidOffset;
-    self.m_ellipsoid_material = new BABYLON.StandardMaterial(
-        "player_ellipsoid", scene);
-    self.m_ellipsoid_material.alpha = 0.5;
-    self.m_ellipsoid_material.diffuseColor = new BABYLON.Color3(0.5, 0.5, 1);
-    self.m_ellipsoid.material = self.m_ellipsoid_material;
+    if (g_game_options.debug_show_player_ellipsoid)
+    {
+        self.m_ellipsoid = BABYLON.MeshBuilder.CreateSphere("player_box_" + String(index),
+            {
+                diameterX:self.m_main.ellipsoid.x*2,
+                diameterY:self.m_main.ellipsoid.y*2,
+                diameterZ:self.m_main.ellipsoid.z*2
+            }, scene);
+        self.m_ellipsoid.parent = self.m_main;
+        self.m_ellipsoid.position = self.m_main.ellipsoidOffset;
+        self.m_ellipsoid_material = new BABYLON.StandardMaterial(
+            "player_ellipsoid", scene);
+        self.m_ellipsoid_material.alpha = 0.5;
+        self.m_ellipsoid_material.diffuseColor = new BABYLON.Color3(0.5, 0.5, 1);
+        self.m_ellipsoid.material = self.m_ellipsoid_material;
+    }
 
     self.m_man = mesh;
     // self.m_man.position.y = 1.38;
@@ -68,7 +77,7 @@ var Scene = function()
     var self = this;
 
     self.m_keys = {left: 0, right: 0, up: 0, down: 0};
-    self.m_speed = 1/5.0;
+    self.m_speed = g_game_options.normal_speed;
 
     //##########################################################################
     // Event handlers
@@ -78,6 +87,11 @@ var Scene = function()
     {
         var key_code = event.keyCode;
         var ch = String.fromCharCode(key_code);
+
+        if (key_code == 16)
+        {
+            self.m_speed = g_game_options.fast_speed;
+        }
         if (ch == "A")
         {
             self.m_keys.left = 1;
@@ -102,6 +116,10 @@ var Scene = function()
         var key_code = event.keyCode;
         var ch = String.fromCharCode(key_code);
 
+        if (key_code == 16)
+        {
+            self.m_speed = g_game_options.normal_speed;
+        }
         if (ch == "A")
         {
             self.m_keys.left = 0;
@@ -214,11 +232,11 @@ var Scene = function()
     });
 
     BABYLON.SceneLoader.ImportMesh(
-        "", "assets/characters/man/", "man.babylon",
+        "Runner", "assets/characters/man/", "man.babylon",
         self.m_scene, function (newMeshes, particleSystems, skeletons)
     {
-        newMeshes[0].visibility = false;
-        self.m_man = newMeshes[1];
+        // newMeshes[0].visibility = false;
+        self.m_man = newMeshes[0];
 
         self.m_player = new Player(0, self.m_man, self.m_scene);
         self.m_player.m_main.position.y = -4;
@@ -234,7 +252,17 @@ var Scene = function()
     self.m_light = new BABYLON.HemisphericLight(
         'light1', new BABYLON.Vector3(0,1,0), self.m_scene);
 
-    self.m_scene.debugLayer.show();
+    // Light directional
+    self.m_light_directional = new BABYLON.DirectionalLight("dir01", new BABYLON.Vector3(-1, -2, 1), self.m_scene);
+    self.m_light_directional.diffuse = new BABYLON.Color3(1, 1, 1);
+    self.m_light_directional.specular = new BABYLON.Color3(0, 0, 0);
+    self.m_light_directional.position = new BABYLON.Vector3(250, 400, 0);
+    self.m_light_directional.intensity = 0.8;
+
+    if (g_game_options.debug_scene_mode)
+    {
+        self.m_scene.debugLayer.show();
+    }
 
     self.m_scene.registerBeforeRender(function(){
         if (self.m_scene.isReady()) {
