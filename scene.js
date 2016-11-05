@@ -252,6 +252,13 @@ var Scene = function()
     self.m_light = new BABYLON.HemisphericLight(
         'light1', new BABYLON.Vector3(0,1,0), self.m_scene);
 
+    // Light directional
+    self.m_light_directional = new BABYLON.DirectionalLight("dir01", new BABYLON.Vector3(-1, -2, 1), self.m_scene);
+    self.m_light_directional.diffuse = new BABYLON.Color3(1, 1, 1);
+    self.m_light_directional.specular = new BABYLON.Color3(0, 0, 0);
+    self.m_light_directional.position = new BABYLON.Vector3(250, 400, 0);
+    self.m_light_directional.intensity = 0.8;
+
     if (g_game_options.debug_scene_mode)
     {
         self.m_scene.debugLayer.show();
