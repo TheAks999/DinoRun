@@ -147,12 +147,26 @@ var Scene = function()
 
     // create a basic BJS Scene object
     self.m_scene = new BABYLON.Scene(self.m_engine);
-    self.m_room_mesh = new BABYLON.Mesh("room", self.m_scene);
+    self.m_room_mesh_a = new BABYLON.Mesh("room_a", self.m_scene);
+    self.m_room_mesh_b = new BABYLON.Mesh("room_b", self.m_scene);
 
     // load room
     BABYLON.SceneLoader.ImportMesh("", "assets/levels/double_pathway/", "double_pathway.babylon", self.m_scene, function (newMeshes) {
-        newMeshes.parent = self.m_room_mesh;
+        for (var key in newMeshes)
+        {
+            newMeshes[key].parent = self.m_room_mesh_a;
+        }
     });
+    BABYLON.SceneLoader.ImportMesh("", "assets/levels/double_pathway/", "double_pathway.babylon", self.m_scene, function (newMeshes) {
+        for (var key in newMeshes)
+        {
+            newMeshes[key].parent = self.m_room_mesh_b;
+        }
+    });
+    // self.m_room_mesh_b = self.m_room_mesh_a.clone("room_b");
+    self.m_room_mesh_b.position.x -= 20;
+    self.m_room_mesh_b.rotation.y = -Math.PI / 2;
+    self.m_room_mesh_b.rotation.x = -Math.PI;
 
     self.m_player = new Player(0, self.m_scene);
     self.m_player.m_main.position.y = -4;
@@ -186,6 +200,8 @@ var Scene = function()
     // var surface_position = new SurfacePosition();
     // var world_position = surface_position.GetWorldPosition;
     // self.m_sphere.position = world_position;
+
+    self.m_scene.debugLayer.show();
 
     self.m_scene.registerBeforeRender(function(){
         if(self.m_scene.isReady() && self.m_player) {
