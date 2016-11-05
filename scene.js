@@ -110,26 +110,25 @@ var Scene = function()
             Math.cos(self.m_player.m_main.rotation.y));
 
         var forward = direction.scale(self.m_speed);
+        var net = BABYLON.Vector3.Zero();
 
         if (self.m_keys.up == 1)
         {
-            self.m_player.m_main.moveWithCollisions(forward);
+            net.addInPlace(forward);
         }
         if (self.m_keys.down == 1)
         {
-            var backwards = BABYLON.Vector3.TransformCoordinates(forward, self.m_rotation_matrices.backwards);
-            self.m_player.m_main.moveWithCollisions(backwards);
+            net.addInPlace(BABYLON.Vector3.TransformCoordinates(forward, self.m_rotation_matrices.backwards));
         }
         if (self.m_keys.left == 1)
         {
-            var left = BABYLON.Vector3.TransformCoordinates(forward, self.m_rotation_matrices.left);
-            self.m_player.m_main.moveWithCollisions(left);
+            net.addInPlace(BABYLON.Vector3.TransformCoordinates(forward, self.m_rotation_matrices.left));
         }
         if (self.m_keys.right == 1)
         {
-            var right = BABYLON.Vector3.TransformCoordinates(forward, self.m_rotation_matrices.right);
-            self.m_player.m_main.moveWithCollisions(right);
+            net.addInPlace(BABYLON.Vector3.TransformCoordinates(forward, self.m_rotation_matrices.right));
         }
+        self.m_player.m_main.moveWithCollisions(net);
         self.CameraFollowPlayer();
     };
 
