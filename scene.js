@@ -19,6 +19,7 @@ var Player = function(index, scene)
     self.m_camera_y_offset = 1.5;
 
     self.m_main = new BABYLON.Mesh("player_" + index, scene);
+    self.m_main.checkCollisions = true;
 
     // static CreateCylinder(name, height, diameterTop, diameterBottom, tessellation, subdivisions, scene, updatable, sideOrientation);
     self.m_cylinder = BABYLON.Mesh.CreateCylinder('player_main_' + String(index), 2, 0.5, 1, 25, 2, scene);
@@ -147,59 +148,56 @@ var Scene = function()
 
     // create a basic BJS Scene object
     self.m_scene = new BABYLON.Scene(self.m_engine);
+    self.m_scene.checkCollisions = true;
+
     self.m_room_mesh_a = new BABYLON.Mesh("room_a", self.m_scene);
-    self.m_room_mesh_b = new BABYLON.Mesh("room_b", self.m_scene);
 
     // load room
-    BABYLON.SceneLoader.ImportMesh("", "assets/levels/double_pathway/", "double_pathway.babylon", self.m_scene, function (newMeshes) {
+    BABYLON.SceneLoader.ImportMesh("", "assets/levels/double_pathway/", "double_pathway.babylon", self.m_scene, function (newMeshes, particleSystems, skeletons) {
         for (var key in newMeshes)
         {
             newMeshes[key].parent = self.m_room_mesh_a;
+            for (var key_2 in self.m_scene.meshes)
+            {
+                if (self.m_scene.meshes[key_2].sourceMesh == newMeshes[key])
+                {
+                    self.m_scene.meshes[key_2].parent = self.m_room_mesh_a;
+                }
+            }
         }
-    });
-    BABYLON.SceneLoader.ImportMesh("", "assets/levels/double_pathway/", "double_pathway.babylon", self.m_scene, function (newMeshes) {
-        for (var key in newMeshes)
+        for (var key in particleSystems)
         {
-            newMeshes[key].parent = self.m_room_mesh_b;
+            particleSystems[key].parent = self.m_room_mesh_a;
         }
+        for (var key in skeletons)
+        {
+            skeletons[key].parent = self.m_room_mesh_a;
+        }
+
+        for (var key in self.m_scene.meshes)
+        {
+            if (self.m_scene.meshes[key].name.substr(0, 3) == "Tr_")
+            {
+                self.m_scene.meshes[key].checkCollisions = true;
+            }
+        }
+
+        // Create second room.
+        self.m_room_mesh_b = self.m_room_mesh_a.clone("room_b");
+        self.m_room_mesh_b.position.x -= 21;
+        self.m_room_mesh_b.rotation.y = -Math.PI / 2;
+        self.m_room_mesh_b.rotation.x = -Math.PI;
     });
-    // self.m_room_mesh_b = self.m_room_mesh_a.clone("room_b");
-    self.m_room_mesh_b.position.x -= 20;
-    self.m_room_mesh_b.rotation.y = -Math.PI / 2;
-    self.m_room_mesh_b.rotation.x = -Math.PI;
 
     self.m_player = new Player(0, self.m_scene);
     self.m_player.m_main.position.y = -4;
-    console.log(self.m_player);
 
-    // create a FreeCamera, and set its position to (x:0, y:5, z:-10)
-    // self.m_camera = new BABYLON.ArcRotateCamera("Camera", 3 * Math.PI / 2, Math.PI / 8, 50, BABYLON.Vector3.Zero(), self.m_scene);
-//    self.m_camera = new BABYLON.FreeCamera('camera1', new BABYLON.Vector3(0, 5,-10), self.m_scene);
     self.m_camera = new BABYLON.ArcRotateCamera('camera1', -Math.PI / 2, Math.PI / 5, 6, new BABYLON.Vector3.Zero(), self.m_scene);
     self.m_scene.activeCamera = self.m_camera;
     self.m_camera.attachControl(self.m_canvas, false);
 
     // create a basic light, aiming 0,1,0 - meaning, to the sky
     self.m_light = new BABYLON.HemisphericLight('light1', new BABYLON.Vector3(0,1,0), self.m_scene);
-
-    // create a built-in "ground" shape; its constructor takes the same 5 params as the sphere's one
-    //self.m_ground = BABYLON.Mesh.CreateGround('ground1', 10, 10, 4, self.m_scene);
-    //console.log(self.m_ground);
-
-    // var surfaces = CreateMap1();
-    // for (var key in surfaces)
-    // {
-    //     var mesh = BABYLON.MeshBuilder.CreatePlane("surface_" + key, {
-    //         width: surfaces[key].m_u_max,
-    //         height: surfaces[key].m_v_max,
-    //         //sideOrientation: BABYLON.Mesh.DOUBLESIDE
-    //     },
-    //     self.m_scene);
-    //     mesh.bakeTransformIntoVertices(surfaces[key].m_to_world_transform);
-    // }
-    // var surface_position = new SurfacePosition();
-    // var world_position = surface_position.GetWorldPosition;
-    // self.m_sphere.position = world_position;
 
     self.m_scene.debugLayer.show();
 
