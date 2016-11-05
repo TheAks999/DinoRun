@@ -88,6 +88,7 @@ var Scene = function()
     self.m_scene = new BABYLON.Scene(self.m_engine);
 
     // create a FreeCamera, and set its position to (x:0, y:5, z:-10)
+    // self.m_camera = new BABYLON.ArcRotateCamera("Camera", 3 * Math.PI / 2, Math.PI / 8, 50, BABYLON.Vector3.Zero(), self.m_scene);
 //    self.m_camera = new BABYLON.FreeCamera('camera1', new BABYLON.Vector3(0, 5,-10), self.m_scene);
     self.m_camera = new BABYLON.TargetCamera('camera1', new BABYLON.Vector3(0, 5,-10), self.m_scene);
 
@@ -108,6 +109,21 @@ var Scene = function()
 
     // create a built-in "ground" shape; its constructor takes the same 5 params as the sphere's one
     self.m_ground = BABYLON.Mesh.CreateGround('ground1', 10, 10, 4, self.m_scene);
+
+    // var surfaces = CreateMap1();
+    // for (var key in surfaces)
+    // {
+    //     var mesh = BABYLON.MeshBuilder.CreatePlane("surface_" + key, {
+    //         width: surfaces[key].m_u_max,
+    //         height: surfaces[key].m_v_max,
+    //         //sideOrientation: BABYLON.Mesh.DOUBLESIDE
+    //     },
+    //     self.m_scene);
+    //     mesh.bakeTransformIntoVertices(surfaces[key].m_to_world_transform);
+    // }
+    // var surface_position = new SurfacePosition();
+    // var world_position = surface_position.GetWorldPosition;
+    // self.m_sphere.position = world_position;
 
     self.m_scene.registerBeforeRender(function(){
         if(self.m_scene.isReady()) {
