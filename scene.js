@@ -10,9 +10,16 @@
 
 var g_scene;
 
+g_rotation_matrices = {
+    left: BABYLON.Matrix.RotationY(-Math.PI / 2),
+    right: BABYLON.Matrix.RotationY(Math.PI / 2),
+    backwards: BABYLON.Matrix.RotationY(-Math.PI)
+};
+
+
 //------------------------------------------------------------------------------
 // The player
-var Player = function(index, scene)
+var Player = function(index, mesh, scene)
 {
     var self = this;
 
@@ -37,16 +44,21 @@ var Player = function(index, scene)
     self.m_ellipsoid_material.diffuseColor = new BABYLON.Color3(0.5, 0.5, 1);
     self.m_ellipsoid.material = self.m_ellipsoid_material;
 
-    // static CreateCylinder(name, height, diameterTop, diameterBottom, tessellation, subdivisions, scene, updatable, sideOrientation);
-    self.m_cylinder = BABYLON.Mesh.CreateCylinder('player_main_' + String(index), 2, 0.5, 1, 25, 2, scene);
-    self.m_cylinder.position.y = 1;
-    self.m_cylinder.parent = self.m_main;
+    self.m_man = mesh;
+    // self.m_man.position.y = 1.38;
+    self.m_man.bakeTransformIntoVertices(g_rotation_matrices.right);
+    self.m_man.parent = self.m_main;
 
-    self.m_box = BABYLON.Mesh.CreateBox("player_box_" + String(index), 0.5, scene);
-    self.m_box.position.y = 1.5;
-    self.m_box.position.z = 0.5;
-    self.m_box.scaling.x = 2.0;
-    self.m_box.parent = self.m_main;
+    // // static CreateCylinder(name, height, diameterTop, diameterBottom, tessellation, subdivisions, scene, updatable, sideOrientation);
+    // self.m_cylinder = BABYLON.Mesh.CreateCylinder('player_main_' + String(index), 2, 0.5, 1, 25, 2, scene);
+    // self.m_cylinder.position.y = 1;
+    // self.m_cylinder.parent = self.m_main;
+    //
+    // self.m_box = BABYLON.Mesh.CreateBox("player_box_" + String(index), 0.5, scene);
+    // self.m_box.position.y = 1.5;
+    // self.m_box.position.z = 0.5;
+    // self.m_box.scaling.x = 2.0;
+    // self.m_box.parent = self.m_main;
 };
 
 //------------------------------------------------------------------------------
@@ -54,12 +66,6 @@ var Player = function(index, scene)
 var Scene = function()
 {
     var self = this;
-
-    self.m_rotation_matrices = {
-        left: BABYLON.Matrix.RotationY(-Math.PI / 2),
-        right: BABYLON.Matrix.RotationY(Math.PI / 2),
-        backwards: BABYLON.Matrix.RotationY(-Math.PI)
-    };
 
     self.m_keys = {left: 0, right: 0, up: 0, down: 0};
     self.m_speed = 1/5.0;
@@ -130,15 +136,15 @@ var Scene = function()
         }
         if (self.m_keys.down == 1)
         {
-            net.addInPlace(BABYLON.Vector3.TransformCoordinates(forward, self.m_rotation_matrices.backwards));
+            net.addInPlace(BABYLON.Vector3.TransformCoordinates(forward, g_rotation_matrices.backwards));
         }
         if (self.m_keys.left == 1)
         {
-            net.addInPlace(BABYLON.Vector3.TransformCoordinates(forward, self.m_rotation_matrices.left));
+            net.addInPlace(BABYLON.Vector3.TransformCoordinates(forward, g_rotation_matrices.left));
         }
         if (self.m_keys.right == 1)
         {
-            net.addInPlace(BABYLON.Vector3.TransformCoordinates(forward, self.m_rotation_matrices.right));
+            net.addInPlace(BABYLON.Vector3.TransformCoordinates(forward, g_rotation_matrices.right));
         }
         self.m_player.m_main.moveWithCollisions(net);
         self.cameraFollowPlayer();
@@ -172,7 +178,6 @@ var Scene = function()
         "", "assets/levels/double_pathway/", "double_pathway.babylon",
         self.m_scene, function (newMeshes, particleSystems, skeletons)
     {
-
         for (var key in newMeshes)
         {
             newMeshes[key].parent = self.m_room_mesh_a;
@@ -208,8 +213,16 @@ var Scene = function()
         self.m_room_mesh_b.rotation.x = -Math.PI;
     });
 
-    self.m_player = new Player(0, self.m_scene);
-    self.m_player.m_main.position.y = -4;
+    BABYLON.SceneLoader.ImportMesh(
+        "", "assets/characters/man/", "man.babylon",
+        self.m_scene, function (newMeshes, particleSystems, skeletons)
+    {
+        newMeshes[0].visibility = false;
+        self.m_man = newMeshes[1];
+
+        self.m_player = new Player(0, self.m_man, self.m_scene);
+        self.m_player.m_main.position.y = -4;
+    });
 
     self.m_camera = new BABYLON.ArcRotateCamera(
         'camera1', -Math.PI / 2, Math.PI / 2, 6,
