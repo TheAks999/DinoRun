@@ -23,13 +23,17 @@ var Player = function(index, scene)
     self.m_main.ellipsoid = new BABYLON.Vector3(0.5, 2.0, 0.5);
     self.m_main.ellipsoidOffset = new BABYLON.Vector3(0, 1.0, 0);
 
-    // static CreateCylinder(name, height, diameterTop, diameterBottom, tessellation, subdivisions, scene, updatable, sideOrientation);
-    self.m_cylinder = BABYLON.Mesh.CreateCylinder('player_main_' + String(index), 2, 0.5, 1, 25, 2, scene);
+    // static CreateCylinder(
+    // name, height, diameterTop, diameterBottom,
+    // tessellation, subdivisions, scene, updatable, sideOrientation);
+    self.m_cylinder = BABYLON.Mesh.CreateCylinder(
+        'player_main_' + String(index), 2, 0.5, 1, 25, 2, scene);
     self.m_cylinder.position.y = 1;
     self.m_cylinder.parent = self.m_main;
     // self.m_cylinder.checkCollisions = true;
 
-    self.m_box = BABYLON.Mesh.CreateBox("player_box_" + String(index), 0.5, scene);
+    self.m_box = BABYLON.Mesh.CreateBox(
+        "player_box_" + String(index), 0.5, scene);
     self.m_box.position.y = 1.5;
     self.m_box.position.z = 0.5;
     self.m_box.scaling.x = 2.0;
@@ -130,11 +134,11 @@ var Scene = function()
             var right = BABYLON.Vector3.TransformCoordinates(forward, self.m_rotation_matrices.right);
             self.m_player.m_main.moveWithCollisions(right);
         }
-        self.CameraFollowPlayer();
+        self.cameraFollowPlayer();
     };
 
     //--------------------------------------------------------------------------
-    self.CameraFollowPlayer = function()
+    self.cameraFollowPlayer = function()
     {
         self.m_player.m_main.rotation.y = -self.m_camera.alpha - Math.PI / 2;
         self.m_camera.target = self.m_player.m_main.position.clone();
@@ -157,7 +161,11 @@ var Scene = function()
     self.m_room_mesh_a = new BABYLON.Mesh("room_a", self.m_scene);
 
     // load room
-    BABYLON.SceneLoader.ImportMesh("", "assets/levels/double_pathway/", "double_pathway.babylon", self.m_scene, function (newMeshes, particleSystems, skeletons) {
+    BABYLON.SceneLoader.ImportMesh(
+        "", "assets/levels/double_pathway/", "double_pathway.babylon",
+        self.m_scene, function (newMeshes, particleSystems, skeletons)
+    {
+
         for (var key in newMeshes)
         {
             newMeshes[key].parent = self.m_room_mesh_a;
@@ -169,16 +177,16 @@ var Scene = function()
                 }
             }
         }
-        for (var key in particleSystems)
+        for (key in particleSystems)
         {
             particleSystems[key].parent = self.m_room_mesh_a;
         }
-        for (var key in skeletons)
+        for (key in skeletons)
         {
             skeletons[key].parent = self.m_room_mesh_a;
         }
 
-        for (var key in self.m_scene.meshes)
+        for (key in self.m_scene.meshes)
         {
             if (self.m_scene.meshes[key].name.substr(0, 3) == "Tr_")
             {
@@ -196,17 +204,20 @@ var Scene = function()
     self.m_player = new Player(0, self.m_scene);
     self.m_player.m_main.position.y = -4;
 
-    self.m_camera = new BABYLON.ArcRotateCamera('camera1', -Math.PI / 2, Math.PI / 5, 6, new BABYLON.Vector3.Zero(), self.m_scene);
+    self.m_camera = new BABYLON.ArcRotateCamera(
+        'camera1', -Math.PI / 2, Math.PI / 5, 6,
+        new BABYLON.Vector3.Zero(), self.m_scene);
     self.m_scene.activeCamera = self.m_camera;
     self.m_camera.attachControl(self.m_canvas, false);
 
     // create a basic light, aiming 0,1,0 - meaning, to the sky
-    self.m_light = new BABYLON.HemisphericLight('light1', new BABYLON.Vector3(0,1,0), self.m_scene);
+    self.m_light = new BABYLON.HemisphericLight(
+        'light1', new BABYLON.Vector3(0,1,0), self.m_scene);
 
     self.m_scene.debugLayer.show();
 
     self.m_scene.registerBeforeRender(function(){
-        if(self.m_scene.isReady() && self.m_player) {
+        if (self.m_scene.isReady()) {
             self.animatePlayer();
         }
     });
@@ -222,7 +233,6 @@ var Scene = function()
     });
     window.addEventListener("keydown", self.onKeyDown, false);
     window.addEventListener("keyup", self.onKeyUp, false);
-
 };
 
 //##############################################################################
