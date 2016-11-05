@@ -109,6 +109,14 @@ var Scene = function()
         }
     };
 
+    //--------------------------------------------------------------------------
+    self.CameraFollowPlayer = function()
+    {
+        //self.m_player.m_main.rotation.y = -4.69 - self.m_camera.alpha;
+        self.m_camera.target.x = parseFloat(self.m_player.m_main.position.x);
+        self.m_camera.target.z = parseFloat(self.m_player.m_main.position.z);
+    };
+
     //##########################################################################
     // Setup the scene
 
@@ -123,8 +131,8 @@ var Scene = function()
 
     // create a FreeCamera, and set its position to (x:0, y:5, z:-10)
 //    self.m_camera = new BABYLON.FreeCamera('camera1', new BABYLON.Vector3(0, 5,-10), self.m_scene);
-    self.m_camera = new BABYLON.TargetCamera('camera1', new BABYLON.Vector3(0, 5,-10), self.m_scene);
-    self.m_camera.setTarget(BABYLON.Vector3.Zero());
+    self.m_camera = new BABYLON.ArcRotateCamera('camera1', -Math.PI / 2, Math.PI / 2.3, 12, new BABYLON.Vector3(0, 1.0, 0), self.m_scene);
+    self.m_scene.activeCamera = self.m_camera;
     self.m_camera.attachControl(self.m_canvas, false);
 
     // create a basic light, aiming 0,1,0 - meaning, to the sky
@@ -144,6 +152,10 @@ var Scene = function()
     // run the render loop
     self.m_engine.runRenderLoop(function(){
         self.m_scene.render();
+        if (self.m_scene.isReady() && self.m_player)
+        {
+            self.CameraFollowPlayer();
+        }
     });
 
     // the canvas/window resize event handler
