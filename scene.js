@@ -17,7 +17,7 @@ var g_rotation_matrices = {
 };
 
 var g_game_options = {
-    debug_scene_mode: true,
+    debug_scene_mode: false,
     debug_show_player_ellipsoid: true,
     normal_speed: 1/5.0,
     fast_speed: 1/5.0 * 2
@@ -128,26 +128,54 @@ var Room = function (room_name, instance_name, scene)
     self.m_scene = scene;
     self.m_info = null;
 
-    self.m_origin_to_world_rotation_mesh
+    self.m_root_mesh
         = new BABYLON.Mesh(self.m_mesh_name+".otw-rot", self.m_scene);
-    self.m_origin_to_word_translation_mesh
-        = new BABYLON.Mesh(self.m_mesh_name+".otw-trans", self.m_scene);
-    self.m_door_to_origin_rotation_mesh
-        = new BABYLON.Mesh(self.m_mesh_name+".dto-rot", self.m_scene);
-    self.m_door_to_origin_translation_mesh
-        = new BABYLON.Mesh(self.m_mesh_name+".dto-trans", self.m_scene);
+    self.m_outer_container_mesh = self.m_root_mesh;
+    self.m_inner_container_mesh = self.m_root_mesh;
 
-    self.m_outer_container_mesh = self.m_origin_to_word_translation_mesh;
-    self.m_inner_container_mesh = self.m_door_to_origin_translation_mesh;
+    // self.m_origin_to_world_rotation_mesh
+    //     = new BABYLON.Mesh(self.m_mesh_name+".otw-rot", self.m_scene);
+    // self.m_origin_to_word_translation_mesh
+    //     = new BABYLON.Mesh(self.m_mesh_name+".otw-trans", self.m_scene);
+    // self.m_door_to_origin_rotation_mesh
+    //     = new BABYLON.Mesh(self.m_mesh_name+".dto-rot", self.m_scene);
+    // self.m_door_to_origin_translation_mesh
+    //     = new BABYLON.Mesh(self.m_mesh_name+".dto-trans", self.m_scene);
 
-    self.m_origin_to_world_rotation_mesh.parent = self.m_origin_to_word_translation_mesh;
-    self.m_door_to_origin_rotation_mesh.parent = self.m_origin_to_world_rotation_mesh;
-    self.m_door_to_origin_translation_mesh.parent = self.m_door_to_origin_rotation_mesh;
+    // self.m_outer_container_mesh = self.m_origin_to_word_translation_mesh;
+    // self.m_inner_container_mesh = self.m_door_to_origin_translation_mesh;
+
+    // self.m_origin_to_world_rotation_mesh.parent = self.m_origin_to_word_translation_mesh;
+    // self.m_door_to_origin_rotation_mesh.parent = self.m_origin_to_world_rotation_mesh;
+    // self.m_door_to_origin_translation_mesh.parent = self.m_door_to_origin_rotation_mesh;
 
     self.m_child_meshes = [];
     self.m_trough_meshes = [];
     self.m_gravity_meshes = [];
     self.m_door_meshes = [];
+
+    self.m_origin_marker = BABYLON.Mesh.CreateLines("marker", [
+        new BABYLON.Vector3(0, 0, 0),
+        new BABYLON.Vector3(1, 0, 0),
+        new BABYLON.Vector3(0, 0, 0),
+        new BABYLON.Vector3(0, 1, 0),
+        new BABYLON.Vector3(0, 0, 0),
+        new BABYLON.Vector3(0, 0, 1),
+        new BABYLON.Vector3(0, .1, 1)
+    ], self.m_scene);
+    self.m_origin_marker.parent = self.m_inner_container_mesh;
+
+    self.m_door_marker = BABYLON.Mesh.CreateLines("marker", [
+        new BABYLON.Vector3(0, 0, 0),
+        new BABYLON.Vector3(.5, 0, 0),
+        new BABYLON.Vector3(0, 0, 0),
+        new BABYLON.Vector3(0, .5, 0),
+        new BABYLON.Vector3(0, 0, 0),
+        new BABYLON.Vector3(0, 0, .5),
+        new BABYLON.Vector3(0, .1, .5)
+    ], self.m_scene);
+    self.m_door_marker.color = new BABYLON.Color3(0, 0, 1);
+    self.m_door_marker.parent = self.m_inner_container_mesh;
 
     //--------------------------------------------------------------------------
     self.scheduleLoad = function(asserts_manager)
@@ -395,11 +423,21 @@ var Scene = function()
         }
         net.addInPlace(new BABYLON.Vector3(0, -.1, 0));
         self.m_player.m_inner_container_mesh.moveWithCollisions(net);
-        self.m_world_transform.position.addInPlace(self.m_player.m_inner_container_mesh.position.negate());
+        //self.m_world_transform.position.subtractInPlace(self.m_player.m_inner_container_mesh.position);
+        self.m_room_a.m_root_mesh.position.subtractInPlace(self.m_player.m_inner_container_mesh.position);
+        self.m_room_b.m_root_mesh.position.subtractInPlace(self.m_player.m_inner_container_mesh.position);
+        self.m_marker_2.position.subtractInPlace(self.m_player.m_inner_container_mesh.position);
         self.m_player.m_inner_container_mesh.position.x = 0;
         self.m_player.m_inner_container_mesh.position.y = 0;
         self.m_player.m_inner_container_mesh.position.z = 0;
         self.cameraFollowPlayer();
+
+        if (!self.m_last_pos.equals(self.m_room_a.m_root_mesh.position))
+        {
+            console.log("pos: " + self.m_room_a.m_root_mesh.position.toString());
+            self.m_last_pos.copyFrom(self.m_room_a.m_root_mesh.position);
+        }
+
 
         // check for sensors
         for (var room_key in self.m_rooms)
@@ -466,17 +504,17 @@ var Scene = function()
         var other_door_info = self.m_room_a.m_info.doors[door_info.connects_to];
         if (room !== self.m_room_a)
         {
-            console.log("Changed rooms");
-            var temp = self.m_room_a;
-            self.m_room_a = self.m_room_b;
-            self.m_room_b = temp;
-
-            self.m_room_a.m_origin_to_word_translation_mesh.position
-                .addInPlace(self.m_world_transform.position);
-            self.m_room_b.m_origin_to_word_translation_mesh.position
-                .addInPlace(self.m_world_transform.position);
-            self.m_world_transform.position
-                .subtractInPlace(self.m_world_transform.position);
+            // console.log("Changed rooms");
+            // var temp = self.m_room_a;
+            // self.m_room_a = self.m_room_b;
+            // self.m_room_b = temp;
+            //
+            // self.m_room_a.m_origin_to_word_translation_mesh.position
+            //     .addInPlace(self.m_world_transform.position);
+            // self.m_room_b.m_origin_to_word_translation_mesh.position
+            //     .addInPlace(self.m_world_transform.position);
+            // self.m_world_transform.position
+            //     .subtractInPlace(self.m_world_transform.position);
         }
         else
         {
@@ -488,34 +526,163 @@ var Scene = function()
             // self.m_marker.rotation.y = door_info.rotation[1];
             // self.m_marker.rotation.z = door_info.rotation[2];
 
+            function getDoorTransform(door_info)
+            {
+                return BABYLON.Matrix.Identity()
+                    .multiply(BABYLON.Matrix.RotationX(door_info.rotation[0]))
+                    .multiply(BABYLON.Matrix.RotationY(door_info.rotation[1]))
+                    .multiply(BABYLON.Matrix.RotationZ(door_info.rotation[2]))
+                    .multiply(BABYLON.Matrix.Translation(
+                        door_info.position[0],
+                        door_info.position[1],
+                        door_info.position[2]));
+            }
 
-            self.m_room_b.m_origin_to_word_translation_mesh.position.x
-                = door_info.position[0];
-            self.m_room_b.m_origin_to_word_translation_mesh.position.y
-                = door_info.position[1];
-            self.m_room_b.m_origin_to_word_translation_mesh.position.z
-                = door_info.position[2];
+            function setMeshFromMatrix(mesh, matrix)
+            {
+                var scale = new BABYLON.Vector3();
+                var rotation_q = new BABYLON.Quaternion();
+                var position = new BABYLON.Vector3();
+                var result = matrix.decompose(scale, rotation_q, position);
+                if (!result)
+                {
+                    alert("Decompose failed");
+                    throw "Decompose failed";
+                }
+                mesh.scale = scale;
+                mesh.rotation = BABYLON.Vector3.Zero();
+                mesh.rotationQuaternion = rotation_q;
+                mesh.position = position;
+            }
 
-            self.m_room_b.m_origin_to_world_rotation_mesh.rotation.x
-                = door_info.rotation[0];
-            self.m_room_b.m_origin_to_world_rotation_mesh.rotation.y
-                = door_info.rotation[1];
-            self.m_room_b.m_origin_to_world_rotation_mesh.rotation.z
-                = door_info.rotation[2];
+            function logDecomposedMatrix(label, matrix)
+            {
+                var scale = new BABYLON.Vector3();
+                var rotation_q = new BABYLON.Quaternion();
+                var position = new BABYLON.Vector3();
+                var result = matrix.decompose(scale, rotation_q, position);
+                if (!result)
+                {
+                    alert("Decompose failed");
+                    throw "Decompose failed";
+                }
+                console.log(label + " scale:" + (scale));
+                console.log(label + " rotation_q:" + (rotation_q));
+                console.log(label + " position:" + (position));
+            }
 
-            self.m_room_b.m_door_to_origin_translation_mesh.position.x
-                = other_door_info.position[0];
-            self.m_room_b.m_door_to_origin_translation_mesh.position.y
-                = other_door_info.position[1];
-            self.m_room_b.m_door_to_origin_translation_mesh.position.z
-                = other_door_info.position[2];
+            function getMatrixFromMesh(mesh)
+            {
+                var matrix = BABYLON.Matrix.Scaling(
+                    mesh.scaling.x,
+                    mesh.scaling.y,
+                    mesh.scaling.z)
+                    .multiply(BABYLON.Matrix.RotationX(mesh.rotation.x))
+                    .multiply(BABYLON.Matrix.RotationX(mesh.rotation.y))
+                    .multiply(BABYLON.Matrix.RotationX(mesh.rotation.z));
+                if ("rotationQuaternion" in mesh
+                    && null != mesh.rotationQuaternion)
+                {
+                    alert("Mesh has Quaternion");
+                }
+                return matrix.multiply(BABYLON.Matrix.Translation(
+                    mesh.position.x,
+                    mesh.position.y,
+                    mesh.position.z));
+            }
 
-            self.m_room_b.m_door_to_origin_rotation_mesh.rotation.x
-                = -other_door_info.rotation[0];
-            self.m_room_b.m_door_to_origin_rotation_mesh.rotation.y
-                = -other_door_info.rotation[1];
-            self.m_room_b.m_door_to_origin_rotation_mesh.rotation.z
-                = -other_door_info.rotation[2];
+            var room_matrix = getMatrixFromMesh(self.m_room_a.m_root_mesh);
+            logDecomposedMatrix("room_matrix", room_matrix);
+
+            var door_matrix = getDoorTransform(door_info);
+            logDecomposedMatrix("door_matrix", door_matrix);
+
+            setMeshFromMatrix(self.m_room_a.m_door_marker, door_matrix);
+
+            var to_door_matrix = door_matrix
+                .multiply(room_matrix)
+                ;
+            logDecomposedMatrix("to_door_matrix", to_door_matrix);
+
+            setMeshFromMatrix(self.m_marker_2, to_door_matrix);
+
+
+            // var inv_to_door_matrix = inv_room_matrix
+            //     .multiply(door_matrix);
+            // logDecomposedMatrix("inv_to_door_matrix", inv_to_door_matrix);
+
+            var other_door_matrix = getDoorTransform(other_door_info);
+            logDecomposedMatrix("other_door_matrix", other_door_matrix);
+            setMeshFromMatrix(self.m_room_b.m_door_marker, other_door_matrix);
+
+            var other_door_adj_matrix = BABYLON.Matrix.RotationY(Math.PI)
+                .multiply(other_door_matrix);
+            logDecomposedMatrix("other_door_adj_matrix", other_door_adj_matrix);
+
+            var matrix = other_door_adj_matrix
+                .multiply(to_door_matrix)
+                ;
+            logDecomposedMatrix("matrix", matrix);
+            setMeshFromMatrix(self.m_room_b.m_root_mesh, matrix);
+
+            // self.m_room_b.m_root_mesh.rotation.x
+            //     = other_door_info.rotation[0]
+            //     // - door_info.rotation[0]
+            // ;
+            // self.m_room_b.m_root_mesh.rotation.y
+            //     = other_door_info.rotation[1]
+            //     // - door_info.rotation[1]
+            // ;
+            // self.m_room_b.m_root_mesh.rotation.z
+            //     = other_door_info.rotation[2]
+            //     // - door_info.rotation[2]
+            // ;
+            //
+            // self.m_room_b.m_root_mesh.position.x
+            //     = other_door_info.position[0]
+            //     + door_info.position[0]
+            //     + self.m_room_a.m_root_mesh.position.x
+            // ;
+            // self.m_room_b.m_root_mesh.position.y
+            //     = other_door_info.position[1]
+            //     + door_info.position[1]
+            //     + self.m_room_a.m_root_mesh.position.y
+            // ;
+            // self.m_room_b.m_root_mesh.position.z
+            //     = other_door_info.position[2]
+            //     + door_info.position[2]
+            //     + self.m_room_a.m_root_mesh.position.z
+            // ;
+
+
+
+            // self.m_room_b.m_origin_to_word_translation_mesh.position.x
+            //     = door_info.position[0];
+            // self.m_room_b.m_origin_to_word_translation_mesh.position.y
+            //     = door_info.position[1];
+            // self.m_room_b.m_origin_to_word_translation_mesh.position.z
+            //     = door_info.position[2];
+            //
+            // self.m_room_b.m_origin_to_world_rotation_mesh.rotation.x
+            //     = door_info.rotation[0];
+            // self.m_room_b.m_origin_to_world_rotation_mesh.rotation.y
+            //     = door_info.rotation[1];
+            // self.m_room_b.m_origin_to_world_rotation_mesh.rotation.z
+            //     = door_info.rotation[2];
+            //
+            // self.m_room_b.m_door_to_origin_translation_mesh.position.x
+            //     = other_door_info.position[0];
+            // self.m_room_b.m_door_to_origin_translation_mesh.position.y
+            //     = other_door_info.position[1];
+            // self.m_room_b.m_door_to_origin_translation_mesh.position.z
+            //     = other_door_info.position[2];
+            //
+            // self.m_room_b.m_door_to_origin_rotation_mesh.rotation.x
+            //     = -other_door_info.rotation[0];
+            // self.m_room_b.m_door_to_origin_rotation_mesh.rotation.y
+            //     = -other_door_info.rotation[1];
+            // self.m_room_b.m_door_to_origin_rotation_mesh.rotation.z
+            //     = -other_door_info.rotation[2];
         }
     };
 
@@ -539,7 +706,7 @@ var Scene = function()
 
     self.m_rooms = [];
 
-    self.m_room_a = new Room("maze", "a", self.m_scene);
+    self.m_room_a = new Room("double_pathway", "a", self.m_scene);
     self.m_room_a.scheduleLoad(self.m_asserts_manager);
 
     self.m_player = new Player(self.m_scene);
@@ -585,7 +752,17 @@ var Scene = function()
         new BABYLON.Vector3(0, 1, 0),
         new BABYLON.Vector3(0, 0, 0),
         new BABYLON.Vector3(0, 0, 1),
-        new BABYLON.Vector3(0, .1, 1),
+        new BABYLON.Vector3(0, .1, 1)
+    ], self.m_scene);
+
+    self.m_marker_2 = BABYLON.Mesh.CreateLines("marker", [
+        new BABYLON.Vector3(0, 0, 0),
+        new BABYLON.Vector3(1, 0, 0),
+        new BABYLON.Vector3(0, 0, 0),
+        new BABYLON.Vector3(0, 1, 0),
+        new BABYLON.Vector3(0, 0, 0),
+        new BABYLON.Vector3(0, 0, 1),
+        new BABYLON.Vector3(0, .1, 1)
     ], self.m_scene);
 
     if (g_game_options.debug_scene_mode)
@@ -612,11 +789,12 @@ var Scene = function()
     window.addEventListener("keyup", self.onKeyUp, false);
 
     self.m_world_transform = new BABYLON.Mesh("world", self.m_scene);
+    self.m_last_pos = BABYLON.Vector3.Zero();
 
     self.m_asserts_manager.onFinish = function()
     {
         self.m_room_b = self.m_room_a.clone("b");
-        self.m_room_b.m_origin_to_word_translation_mesh.position.y -= 100;
+        self.m_room_b.m_root_mesh.position.y -= 25;
         //self.m_room_b.m_rotation_mesh.rotation.y = -Math.PI / 2;
         //self.m_room_b.m_rotation_mesh.rotation.x = -Math.PI;
 
@@ -624,14 +802,21 @@ var Scene = function()
         self.m_rooms.push(self.m_room_a);
         self.m_rooms.push(self.m_room_b);
 
-        self.m_room_a.m_outer_container_mesh.parent = self.m_world_transform;
-        self.m_room_b.m_outer_container_mesh.parent = self.m_world_transform;
+        //self.m_room_a.m_outer_container_mesh.parent = self.m_world_transform;
+        //self.m_room_b.m_outer_container_mesh.parent = self.m_world_transform;
 
-        self.m_world_transform.position.x
+        // self.m_world_transform.position.x
+        //     = -self.m_room_a.m_info.start_position[0];
+        // self.m_world_transform.position.y
+        //     = -self.m_room_a.m_info.start_position[1];
+        // self.m_world_transform.position.z
+        //     = -self.m_room_a.m_info.start_position[2];
+
+        self.m_room_a.m_root_mesh.position.x
             = -self.m_room_a.m_info.start_position[0];
-        self.m_world_transform.position.y
+        self.m_room_a.m_root_mesh.position.y
             = -self.m_room_a.m_info.start_position[1];
-        self.m_world_transform.position.z
+        self.m_room_a.m_root_mesh.position.z
             = -self.m_room_a.m_info.start_position[2];
     };
     self.m_asserts_manager.load();
