@@ -395,6 +395,10 @@ var Scene = function()
         }
         net.addInPlace(new BABYLON.Vector3(0, -.1, 0));
         self.m_player.m_inner_container_mesh.moveWithCollisions(net);
+        self.m_world_transform.position.addInPlace(self.m_player.m_inner_container_mesh.position.negate());
+        self.m_player.m_inner_container_mesh.position.x = 0;
+        self.m_player.m_inner_container_mesh.position.y = 0;
+        self.m_player.m_inner_container_mesh.position.z = 0;
         self.cameraFollowPlayer();
 
         // check for sensors
@@ -466,6 +470,13 @@ var Scene = function()
             var temp = self.m_room_a;
             self.m_room_a = self.m_room_b;
             self.m_room_b = temp;
+
+            self.m_room_a.m_origin_to_word_translation_mesh.position
+                .addInPlace(self.m_world_transform.position);
+            self.m_room_b.m_origin_to_word_translation_mesh.position
+                .addInPlace(self.m_world_transform.position);
+            self.m_world_transform.position
+                .subtractInPlace(self.m_world_transform.position);
         }
         else
         {
@@ -528,7 +539,7 @@ var Scene = function()
 
     self.m_rooms = [];
 
-    self.m_room_a = new Room("double_pathway", "a", self.m_scene);
+    self.m_room_a = new Room("maze", "a", self.m_scene);
     self.m_room_a.scheduleLoad(self.m_asserts_manager);
 
     self.m_player = new Player(self.m_scene);
@@ -600,10 +611,12 @@ var Scene = function()
     window.addEventListener("keydown", self.onKeyDown, false);
     window.addEventListener("keyup", self.onKeyUp, false);
 
+    self.m_world_transform = new BABYLON.Mesh("world", self.m_scene);
+
     self.m_asserts_manager.onFinish = function()
     {
         self.m_room_b = self.m_room_a.clone("b");
-        self.m_room_b.m_origin_to_word_translation_mesh.position.x -= 21;
+        self.m_room_b.m_origin_to_word_translation_mesh.position.y -= 100;
         //self.m_room_b.m_rotation_mesh.rotation.y = -Math.PI / 2;
         //self.m_room_b.m_rotation_mesh.rotation.x = -Math.PI;
 
@@ -611,12 +624,15 @@ var Scene = function()
         self.m_rooms.push(self.m_room_a);
         self.m_rooms.push(self.m_room_b);
 
-        self.m_player.m_inner_container_mesh.position.x
-            = self.m_room_a.m_info.start_position[0];
-        self.m_player.m_inner_container_mesh.position.y
-            = self.m_room_a.m_info.start_position[1];
-        self.m_player.m_inner_container_mesh.position.z
-            = self.m_room_a.m_info.start_position[2];
+        self.m_room_a.m_outer_container_mesh.parent = self.m_world_transform;
+        self.m_room_b.m_outer_container_mesh.parent = self.m_world_transform;
+
+        self.m_world_transform.position.x
+            = -self.m_room_a.m_info.start_position[0];
+        self.m_world_transform.position.y
+            = -self.m_room_a.m_info.start_position[1];
+        self.m_world_transform.position.z
+            = -self.m_room_a.m_info.start_position[2];
     };
     self.m_asserts_manager.load();
 };

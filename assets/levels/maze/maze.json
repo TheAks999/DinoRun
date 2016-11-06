@@ -1,0 +1,102 @@
+{
+  "start_position": [0, 0, 0],
+  "start_rotation": [0, 0, 0],
+  "doors":
+  {
+    "": {
+      "position": [0, -4, 10.5],
+      "rotation": [0, 0, 3.141592653589793],
+      "connects_to": ""
+    },
+    ".001": {
+      "position": [0, 0, 0],
+      "rotation": [0, 0,0],
+      "connects_to": ""
+    },
+    ".002": {
+      "position": [0, 0, 0],
+      "rotation": [0, 0,0],
+      "connects_to": ""
+    },
+    ".003": {
+      "position": [0, 0, 0],
+      "rotation": [0, 0,0],
+      "connects_to": ""
+    },
+    ".004": {
+      "position": [0, 0, 0],
+      "rotation": [0, 0,0],
+      "connects_to": ""
+    },
+    ".005": {
+      "position": [0, 0, 0],
+      "rotation": [0, 0,0],
+      "connects_to": ""
+    },
+    ".006": {
+      "position": [0, 0, 0],
+      "rotation": [0, 0,0],
+      "connects_to": ""
+    },
+    ".007": {
+      "position": [0, 0, 0],
+      "rotation": [0, 0,0],
+      "connects_to": ""
+    },
+    ".008": {
+      "position": [0, 0, 0],
+      "rotation": [0, 0,0],
+      "connects_to": ""
+    },
+    ".009": {
+      "position": [0, 0, 0],
+      "rotation": [0, 0,0],
+      "connects_to": ""
+    },
+    ".010": {
+      "position": [0, 0, 0],
+      "rotation": [0, 0,0],
+      "connects_to": ""
+    },
+    ".011": {
+      "position": [0, 0, 0],
+      "rotation": [0, 0,0],
+      "connects_to": ""
+    },
+    ".012": {
+      "position": [0, 0, 0],
+      "rotation": [0, 0,0],
+      "connects_to": ""
+    },
+    ".013": {
+      "position": [0, 0, 0],
+      "rotation": [0, 0,0],
+      "connects_to": ""
+    },
+    ".014": {
+      "position": [0, 0, 0],
+      "rotation": [0, 0,0],
+      "connects_to": ""
+    },
+    ".015": {
+      "position": [0, 0, 0],
+      "rotation": [0, 0,0],
+      "connects_to": ""
+    },
+    ".016": {
+      "position": [0, 0, 0],
+      "rotation": [0, 0,0],
+      "connects_to": ""
+    },
+    ".017": {
+      "position": [0, 0, 0],
+      "rotation": [0, 0,0],
+      "connects_to": ""
+    },
+    ".018": {
+      "position": [0, 0, 0],
+      "rotation": [0, 0,0],
+      "connects_to": ""
+    }
+  }
+}
