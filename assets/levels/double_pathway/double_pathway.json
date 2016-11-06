@@ -1,0 +1,27 @@
+{
+  "start_position": [0, -3.8, 0],
+  "start_rotation": [0, 0, 0],
+  "doors":
+  {
+    "East": {
+      "position": [],
+      "rotation": [],
+      "connects_to": "North"
+    },
+    "West": {
+      "position": [],
+      "rotation": [],
+      "connects_to": "South"
+    },
+    "North": {
+      "position": [],
+      "rotation": [],
+      "connects_to": "East"
+    },
+    "South": {
+      "position": [],
+      "rotation": [],
+      "connects_to": "West"
+    }
+  }
+}

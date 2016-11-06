@@ -31,7 +31,7 @@ var Player = function (scene)
 
     self.m_camera_y_offset = 1.5;
 
-    self.m_name="player";
+    self.m_mesh_name="player";
     self.m_root_mesh = new BABYLON.Mesh("player", scene);
     self.m_child_meshes = [];
 
@@ -78,7 +78,7 @@ var Player = function (scene)
     self.scheduleLoad = function(asserts_manager, root_url, scene_file_name)
     {
         var task = asserts_manager.addMeshTask(
-            self.m_name + "_task", "", root_url,
+            self.m_mesh_name + "_task", "", root_url,
             scene_file_name);
         task.onSuccess = function (task)
         {
@@ -89,7 +89,7 @@ var Player = function (scene)
         };
         task.onError = function (task)
         {
-            alert(self.m_name + " failed to load.")
+            alert(self.m_mesh_name + " failed to load.")
         };
     };
 
@@ -123,10 +123,11 @@ var Room = function (room_name, instance_name, scene)
     var self = this;
     self.m_room_name = room_name;
     self.m_instance_name = instance_name;
-    //self.m_name = self.m_room_name + "." + self.m_instance_name;
-    self.m_name = self.m_instance_name;
+    self.m_detail_name = self.m_room_name + "." + self.m_instance_name;
+    self.m_mesh_name = self.m_instance_name;
     self.m_scene = scene;
-    self.m_root_mesh = new BABYLON.Mesh(self.m_name, self.m_scene);
+    self.m_info = null;
+    self.m_root_mesh = new BABYLON.Mesh(self.m_mesh_name, self.m_scene);
     self.m_child_meshes = [];
     self.m_trough_meshes = [];
     self.m_gravity_meshes = [];
@@ -138,20 +139,33 @@ var Room = function (room_name, instance_name, scene)
         var meshes_names = "";
         var root_url = "assets/levels/" + self.m_room_name + "/";
         var scene_file_name = self.m_room_name + ".babylon";
+        var desc_file_name = self.m_room_name + ".json";
 
-        var task = asserts_manager.addMeshTask(
-            self.m_name + "_task", meshes_names, root_url,
-            scene_file_name);
-        task.onSuccess = function (task)
+        var mesh_task = asserts_manager.addMeshTask(
+            self.m_detail_name + "_mesh_task", 
+            meshes_names, root_url, scene_file_name);
+        mesh_task.onSuccess = function (task)
         {
             self.handleMeshLoadSuccess(
                 task.loadedMeshes,
                 task.loadedParticleSystems,
                 task.loadedSkeletons);
         };
-        task.onError = function (task)
+        mesh_task.onError = function (task)
         {
-            alert(self.m_name + " failed to load.")
+            alert(self.m_detail_name + " failed to load.")
+        };
+
+        var text_task = asserts_manager.addTextFileTask(
+            self.m_detail_name + "_text_task",
+            root_url + desc_file_name);
+        text_task.onSuccess = function (task)
+        {
+            self.handleTextLoadSuccess(task.text);
+        };
+        text_task.onError = function (task)
+        {
+            alert(self.m_detail_name + " failed to load.")
         };
     };
 
@@ -162,7 +176,7 @@ var Room = function (room_name, instance_name, scene)
         function linkMesh(mesh)
         {
             mesh.parent = self.m_root_mesh;
-            mesh.name = self.m_name + "." + mesh.id;
+            mesh.name = self.m_mesh_name + "." + mesh.id;
             self.m_child_meshes.push(mesh);
         }
 
@@ -212,19 +226,25 @@ var Room = function (room_name, instance_name, scene)
     };
 
     //--------------------------------------------------------------------------
+    self.handleTextLoadSuccess = function (text)
+    {
+        self.m_info = JSON.parse(text)
+    };
+
+    //--------------------------------------------------------------------------
     self.clone = function(instance_name)
     {
         var new_room = new Room(self.m_room_name, instance_name, self.m_scene);
-        var prefix = new_room.m_name + ".";
+        var prefix = new_room.m_mesh_name + ".";
         for (key in self.m_child_meshes)
         {
             var mesh = self.m_child_meshes[key];
-            var new_mesh = mesh.clone(new_room.m_name);
+            var new_mesh = mesh.clone(new_room.m_mesh_name);
             if (new_mesh.id.substr(0, prefix.length) == prefix)
             {
                 new_mesh.id = new_mesh.id.substr(prefix.length);
             }
-            new_mesh.name = new_room.m_name + "." + new_mesh.id;
+            new_mesh.name = new_room.m_mesh_name + "." + new_mesh.id;
             new_mesh.parent = new_room.m_root_mesh;
             new_room.m_child_meshes.push(new_mesh);
 
@@ -373,6 +393,20 @@ var Scene = function()
                         room_key, room, gravity_mesh_key, gravity_mesh);
                 }
             }
+
+            for (var door_mesh_key in room.m_door_meshes)
+            {
+                var door_mesh = room.m_door_meshes[door_mesh_key];
+                if (self.m_door_mesh === door_mesh)
+                {
+                    continue;
+                }
+                if (self.m_player.m_ellipsoid.intersectsMesh(door_mesh, true))
+                {
+                    self.handleDoor(
+                        room_key, room, door_mesh_key, door_mesh);
+                }
+            }
         }
     };
 
@@ -393,6 +427,14 @@ var Scene = function()
         console.log("Gravity:" + self.m_gravity_mesh.name);
     };
 
+    //--------------------------------------------------------------------------
+    self.handleDoor = function(
+        room_key, room, door_mesh_key, door_mesh)
+    {
+        self.m_door_mesh = door_mesh;
+        console.log("Door:" + self.m_door_mesh.name);
+    };
+
     //##########################################################################
     // Setup the scene
 
@@ -409,6 +451,7 @@ var Scene = function()
     self.m_asserts_manager = new BABYLON.AssetsManager(self.m_scene);
 
     self.m_gravity_mesh = null;
+    self.m_door_mesh = null;
 
     self.m_rooms = [];
 
@@ -467,10 +510,16 @@ var Scene = function()
         self.m_room_b.m_root_mesh.rotation.y = -Math.PI / 2;
         self.m_room_b.m_root_mesh.rotation.x = -Math.PI;
 
-        //self.m_player.m_root_mesh.position.y = -4;
 
         self.m_rooms.push(self.m_room_a);
         self.m_rooms.push(self.m_room_b);
+
+        self.m_player.m_root_mesh.position.x
+            = self.m_room_a.m_info.start_position[0];
+        self.m_player.m_root_mesh.position.y
+            = self.m_room_a.m_info.start_position[1];
+        self.m_player.m_root_mesh.position.z
+            = self.m_room_a.m_info.start_position[2];
     };
     self.m_asserts_manager.load();
 };
