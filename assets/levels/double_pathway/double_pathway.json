@@ -4,23 +4,23 @@
   "doors":
   {
     "East": {
-      "position": [],
-      "rotation": [],
+      "position": [0, -4, 10.5],
+      "rotation": [0, 0, 3.141592653589793],
       "connects_to": "North"
     },
     "West": {
-      "position": [],
-      "rotation": [],
+      "position": [0, -4, -10.5],
+      "rotation": [0, 3.141592653589793, 3.141592653589793],
       "connects_to": "South"
     },
     "North": {
-      "position": [],
-      "rotation": [],
+      "position": [10.5, -4, 0],
+      "rotation": [0, 1.5707963267948966, 0],
       "connects_to": "East"
     },
     "South": {
-      "position": [],
-      "rotation": [],
+      "position": [-10, -4, 0],
+      "rotation": [0, -1.5707963267948966, 0],
       "connects_to": "West"
     }
   }
