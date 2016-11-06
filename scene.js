@@ -535,6 +535,20 @@ var Scene = function()
     self.m_player.scheduleLoad(self.m_asserts_manager,
         "assets/characters/man/", "man.babylon");
 
+    // Example code to load an obj.
+    // var task = self.m_asserts_manager.addMeshTask(
+    //     "cube", "", "assets/cube/",
+    //     "cube.obj");
+    // task.onSuccess = function (task)
+    // {
+    //     console.log(task);
+    //     console.log(task.loadedMeshes);
+    // };
+    // task.onError = function (task)
+    // {
+    //     alert("obj failed to load.")
+    // };
+
     self.m_camera = new BABYLON.ArcRotateCamera(
         'camera1', -Math.PI / 2, Math.PI / 2, 6,
         new BABYLON.Vector3.Zero(), self.m_scene);
