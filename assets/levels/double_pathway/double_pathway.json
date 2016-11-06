@@ -4,12 +4,12 @@
   "doors":
   {
     "East": {
-      "position": [0, -4, 10.5],
+      "position": [0, 4, 10.5],
       "rotation": [0, 0, 3.141592653589793],
       "connects_to": "North"
     },
     "West": {
-      "position": [0, -4, -10.5],
+      "position": [0, 4, -10.5],
       "rotation": [0, 3.141592653589793, 3.141592653589793],
       "connects_to": "South"
     },
