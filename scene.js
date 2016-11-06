@@ -37,25 +37,27 @@ var Player = function (scene)
 
     self.m_root_mesh.checkCollisions = true;
     self.m_root_mesh.ellipsoid = new BABYLON.Vector3(0.5, 0.5, 0.5);
-    self.m_root_mesh.ellipsoidOffset = new BABYLON.Vector3(0, 1.0, 0);
+    self.m_root_mesh.ellipsoidOffset = new BABYLON.Vector3(0, 1, 0);
 
-    if (g_game_options.debug_show_player_ellipsoid)
-    {
-        self.m_ellipsoid = BABYLON.MeshBuilder.CreateSphere(
-            "player_ellipsoid",
-            {
-                diameterX:self.m_root_mesh.ellipsoid.x*2,
-                diameterY:self.m_root_mesh.ellipsoid.y*2,
-                diameterZ:self.m_root_mesh.ellipsoid.z*2
-            }, scene);
-        self.m_ellipsoid.parent = self.m_root_mesh;
-        self.m_ellipsoid.position = self.m_root_mesh.ellipsoidOffset;
-        self.m_ellipsoid_material = new BABYLON.StandardMaterial(
-            "player_ellipsoid_material", scene);
-        self.m_ellipsoid_material.alpha = 0.5;
-        self.m_ellipsoid_material.diffuseColor = new BABYLON.Color3(0.5, 0.5, 1);
-        self.m_ellipsoid.material = self.m_ellipsoid_material;
-    }
+    self.m_ellipsoid = BABYLON.MeshBuilder.CreateSphere(
+        "player_ellipsoid",
+        {
+            diameterX:self.m_root_mesh.ellipsoid.x*2,
+            diameterY:self.m_root_mesh.ellipsoid.y*2,
+            diameterZ:self.m_root_mesh.ellipsoid.z*2
+        }, scene);
+    self.m_ellipsoid.parent = self.m_root_mesh;
+    self.m_ellipsoid.position = self.m_root_mesh.ellipsoidOffset
+        .clone().addInPlace(new BABYLON.Vector3(0, -0.5, 0));
+    self.m_ellipsoid_material = new BABYLON.StandardMaterial(
+        "player_ellipsoid_material", scene);
+    self.m_ellipsoid_material.alpha
+        = g_game_options.debug_show_player_ellipsoid ? 0.5 : 0;
+    self.m_ellipsoid_material.diffuseColor = new BABYLON.Color3(0.5, 0.5, 1);
+    self.m_ellipsoid.material = self.m_ellipsoid_material;
+
+    self.m_action_manager = new BABYLON.ActionManager(scene);
+    self.m_ellipsoid.action_manager =self.m_action_manager;
 
     // // static CreateCylinder(
     // //    name, height, diameterTop, diameterBottom,
@@ -111,27 +113,34 @@ var Player = function (scene)
         // self.m_man.position.y = 1.38;
         //self.m_man.bakeTransformIntoVertices(g_rotation_matrices.right);
         self.m_man.parent = self.m_root_mesh;
-
     };
 
 };
 
 //------------------------------------------------------------------------------
-var Room = function (name, scene)
+var Room = function (room_name, instance_name, scene)
 {
     var self = this;
-    self.m_name = name;
+    self.m_room_name = room_name;
+    self.m_instance_name = instance_name;
+    //self.m_name = self.m_room_name + "." + self.m_instance_name;
+    self.m_name = self.m_instance_name;
     self.m_scene = scene;
-    self.m_root_mesh = new BABYLON.Mesh(name, self.m_scene);
+    self.m_root_mesh = new BABYLON.Mesh(self.m_name, self.m_scene);
     self.m_child_meshes = [];
     self.m_trough_meshes = [];
     self.m_gravity_meshes = [];
+    self.m_door_meshes = [];
 
     //--------------------------------------------------------------------------
-    self.scheduleLoad = function(asserts_manager, root_url, scene_file_name)
+    self.scheduleLoad = function(asserts_manager)
     {
+        var meshes_names = "";
+        var root_url = "assets/levels/" + self.m_room_name + "/";
+        var scene_file_name = self.m_room_name + ".babylon";
+
         var task = asserts_manager.addMeshTask(
-            self.m_name + "_task", "", root_url,
+            self.m_name + "_task", meshes_names, root_url,
             scene_file_name);
         task.onSuccess = function (task)
         {
@@ -150,60 +159,98 @@ var Room = function (name, scene)
     self.handleMeshLoadSuccess = function (
         new_meshes, particle_systems, skeletons)
     {
+        function linkMesh(mesh)
+        {
+            mesh.parent = self.m_root_mesh;
+            mesh.name = self.m_name + "." + mesh.id;
+            self.m_child_meshes.push(mesh);
+        }
+
         // link the members to the root mesh
         for (var key in new_meshes)
         {
             var new_mesh = new_meshes[key];
-            new_mesh.parent = self.m_root_mesh;
-            self.m_child_meshes.push(new_mesh);
+            linkMesh(new_mesh);
             for (var key_2 in self.m_scene.meshes)
             {
                 var scene_mesh = self.m_scene.meshes[key_2];
-                if (scene_mesh.sourceMesh == new_mesh)
+                if (scene_mesh.sourceMesh === new_mesh)
                 {
-                    scene_mesh.parent = self.m_root_mesh;
-                    self.m_child_meshes.push(scene_mesh);
+                    linkMesh(scene_mesh);
                 }
             }
         }
-        for (key in particle_systems)
-        {
-            particle_systems[key].parent = self.m_root_mesh;
-        }
-        for (key in skeletons)
-        {
-            skeletons[key].parent = self.m_root_mesh;
-        }
 
+        // identify troughs and gravity
         // turn on collisions for troughs
         for (key in self.m_child_meshes)
         {
             var mesh = self.m_child_meshes[key];
-            if (mesh.name.substr(0, 3) == "Tr_")
+
+            mesh.m_is_trough = false;
+            if (mesh.id.substr(0, 3) == "Tr_")
             {
                 mesh.checkCollisions = true;
                 self.m_trough_meshes.push(mesh);
+                mesh.m_is_trough = true;
             }
-        }
-        if (mesh.name.substr(0, 5) == "Grav_")
-        {
-            self.m_gravity_meshes.push(mesh);
+
+            mesh.m_is_gravity = false;
+            if (mesh.id.substr(0, 5) == "Grav_")
+            {
+                self.m_gravity_meshes.push(mesh);
+                mesh.m_is_gravity = true;
+            }
+
+            mesh.m_is_door = false;
+            if (mesh.id.substr(0, 5) == "Door_")
+            {
+                self.m_door_meshes.push(mesh);
+                mesh.m_is_door = true;
+            }
         }
     };
 
     //--------------------------------------------------------------------------
-    self.clone = function(name)
+    self.clone = function(instance_name)
     {
-        var new_room = new Room(name, self.m_scene);
+        var new_room = new Room(self.m_room_name, instance_name, self.m_scene);
+        var prefix = new_room.m_name + ".";
         for (key in self.m_child_meshes)
         {
             var mesh = self.m_child_meshes[key];
-            var new_mesh = mesh.clone(name + "." + mesh.name);
+            var new_mesh = mesh.clone(new_room.m_name);
+            if (new_mesh.id.substr(0, prefix.length) == prefix)
+            {
+                new_mesh.id = new_mesh.id.substr(prefix.length);
+            }
+            new_mesh.name = new_room.m_name + "." + new_mesh.id;
             new_mesh.parent = new_room.m_root_mesh;
             new_room.m_child_meshes.push(new_mesh);
+
+            new_mesh.m_is_trough = false;
+            if (mesh.m_is_trough)
+            {
+                new_mesh.m_is_trough = true;
+                new_room.m_trough_meshes.push(new_mesh);
+            }
+
+            new_mesh.m_is_gravity = false;
+            if (mesh.m_is_gravity)
+            {
+                new_mesh.m_is_gravity = true;
+                new_room.m_gravity_meshes.push(new_mesh);
+            }
+
+            new_mesh.m_is_door = false;
+            if (mesh.m_is_door)
+            {
+                new_mesh.m_is_door = true;
+                new_room.m_door_meshes.push(new_mesh);
+            }
         }
         return new_room;
-    }
+    };
 };
 
 //------------------------------------------------------------------------------
@@ -304,8 +351,29 @@ var Scene = function()
             net.addInPlace(BABYLON.Vector3.TransformCoordinates(
                 forward, g_rotation_matrices.right));
         }
+        net.addInPlace(new BABYLON.Vector3(0, -.1, 0));
         self.m_player.m_root_mesh.moveWithCollisions(net);
         self.cameraFollowPlayer();
+
+        // check for sensors
+        for (var room_key in self.m_rooms)
+        {
+            var room = self.m_rooms[room_key];
+
+            for (var gravity_mesh_key in room.m_gravity_meshes)
+            {
+                var gravity_mesh = room.m_gravity_meshes[gravity_mesh_key];
+                if (self.m_gravity_mesh === gravity_mesh)
+                {
+                    continue;
+                }
+                if (self.m_player.m_ellipsoid.intersectsMesh(gravity_mesh, true))
+                {
+                    self.handleGravity(
+                        room_key, room, gravity_mesh_key, gravity_mesh);
+                }
+            }
+        }
     };
 
     //--------------------------------------------------------------------------
@@ -315,6 +383,14 @@ var Scene = function()
             = -self.m_camera.alpha - Math.PI / 2;
         self.m_camera.target = self.m_player.m_root_mesh.position.clone();
         self.m_camera.target.y += self.m_player.m_camera_y_offset;
+    };
+
+    //--------------------------------------------------------------------------
+    self.handleGravity = function(
+        room_key, room, gravity_mesh_key, gravity_mesh)
+    {
+        self.m_gravity_mesh = gravity_mesh;
+        console.log("Gravity:" + self.m_gravity_mesh.name);
     };
 
     //##########################################################################
@@ -332,10 +408,12 @@ var Scene = function()
 
     self.m_asserts_manager = new BABYLON.AssetsManager(self.m_scene);
 
-    self.m_room_a = new Room("room_a", self.m_scene);
-    self.m_room_a.scheduleLoad(self.m_asserts_manager,
-        "assets/levels/double_pathway/",
-        "double_pathway.babylon");
+    self.m_gravity_mesh = null;
+
+    self.m_rooms = [];
+
+    self.m_room_a = new Room("double_pathway", "a", self.m_scene);
+    self.m_room_a.scheduleLoad(self.m_asserts_manager);
 
     self.m_player = new Player(self.m_scene);
     self.m_player.scheduleLoad(self.m_asserts_manager,
@@ -384,12 +462,15 @@ var Scene = function()
 
     self.m_asserts_manager.onFinish = function()
     {
-        self.m_room_b = self.m_room_a.clone("room_b");
+        self.m_room_b = self.m_room_a.clone("b");
         self.m_room_b.m_root_mesh.position.x -= 21;
         self.m_room_b.m_root_mesh.rotation.y = -Math.PI / 2;
         self.m_room_b.m_root_mesh.rotation.x = -Math.PI;
 
-        self.m_player.m_root_mesh.position.y = -4;
+        //self.m_player.m_root_mesh.position.y = -4;
+
+        self.m_rooms.push(self.m_room_a);
+        self.m_rooms.push(self.m_room_b);
     };
     self.m_asserts_manager.load();
 };
