@@ -3,15 +3,15 @@
   "start_rotation": [0, 0, 0],
   "doors":
   {
-    "East": {
+    "West": {
       "position": [0, 4, 10.5],
       "rotation": [0, 0, 3.141592653589793],
-      "connects_to": "North"
+      "connects_to": "South"
     },
-    "West": {
+    "East": {
       "position": [0, 4, -10.5],
       "rotation": [0, 3.141592653589793, 3.141592653589793],
-      "connects_to": "South"
+      "connects_to": "North"
     },
     "North": {
       "position": [10.5, -4, 0],
@@ -19,7 +19,7 @@
       "connects_to": "East"
     },
     "South": {
-      "position": [-10, -4, 0],
+      "position": [-10.5, -4, 0],
       "rotation": [0, -1.5707963267948966, 0],
       "connects_to": "West"
     }
